@@ -1,0 +1,7 @@
+flask
+gunicorn
+requests
+python-dotenv
+Flask-PyMongo
+pika
+pymon

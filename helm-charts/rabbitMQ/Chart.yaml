@@ -1,0 +1,7 @@
+# This file  holds the chart metadata.
+apiVersion: v2
+name: rabbitMQ
+description: A Helm chart for rabbitMQ service
+type: application
+version: 0.1.0
+appVersion: "1.0.1"

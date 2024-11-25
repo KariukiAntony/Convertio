@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-statefulset
+  labels:
+    app: {{ .Values.appName }}
+
+spec:
+  replicas: 1
+  serviceName: {{ .Values.service.name }}  # References the Headless Service
+  selector:
+    matchLabels:
+      app: {{ .Values.appName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appName }}
+    spec:
+      containers:
+        - name: mongodb
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 27017
+          envFrom:
+            - configMapRef:
+                name: mongodb-configmap
+            - secretRef:
+                name: mongodb-secret
+          volumeMounts:
+            - name: mongodb-volume
+              mountPath: /data/db
+      volumes:
+        - name: mongodb-volume
+          persistentVolumeClaim:
+            claimName: mongodb-pvc
+      restartPolicy: Always

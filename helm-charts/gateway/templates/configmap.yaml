@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-configmap
+data:
+  AUTH_SVC_ADRESS: "http://auth-svc:8000"
+  VIDEO_QUEUE: video

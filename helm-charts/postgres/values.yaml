@@ -1,0 +1,12 @@
+appName: postgres
+
+image:
+  name: postgres
+  tag: 13
+
+auth:
+  POSTGRES_USER: admin
+  POSTGRES_PASSWORD: password
+
+service:
+  name: postgres

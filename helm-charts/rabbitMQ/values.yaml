@@ -1,0 +1,12 @@
+appName: rabbitmq
+
+image:
+  name: rabbitmq
+  tag: 3.8.17-management
+
+auth:
+  RABBITMQ_DEFAULT_USER: admin
+  RABBITMQ_DEFAULT_PASS: password
+
+service:
+  name: rabbitmq

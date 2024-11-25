@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rabbitmq-pvc
+  labels:
+    type: local
+
+spec:
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: rabbitmq-storage-class
+  resources:
+    requests:
+      storage: 10Gi
+

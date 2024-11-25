@@ -1,0 +1,4 @@
+auth_svc/__pycache__
+__pycache__/
+storage/__pycache__/
+.env

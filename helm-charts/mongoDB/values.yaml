@@ -1,0 +1,12 @@
+appName: mongodb
+
+image:
+  name: mongo
+  tag: latest
+
+auth:
+  root_username: admin
+  root_password: password
+
+service:
+  name: mongodb

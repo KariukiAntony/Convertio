@@ -1,0 +1,8 @@
+flask 
+gunicorn
+python-dotenv
+Flask-SQLAlchemy
+Flask-Migrate
+PyJWT
+psycopg2-binary
+bcrypt

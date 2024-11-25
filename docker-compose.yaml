@@ -1,0 +1,166 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.8.17-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 2
+      start_period: 30s
+    networks:
+      - test
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: mongosh --eval 'db.runCommand("ping").ok' --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - test
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_USER:-password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin}"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 30s
+    networks:
+      - test
+
+  gateway-svc:
+    build:
+      context: ./src/gateway-svc
+      dockerfile: dev.Dockerfile
+    container_name: gateway
+    restart: always
+    env_file:
+      - ./src/gateway-svc/.env
+    ports:
+      - "5000:5000"
+    environment:
+      AUTH_SVC_ADRESS: http://auth-svc:8000
+      MONGODB_VIDEOS_URI : mongodb://admin:password@mongodb:27017/videos?authSource=admin
+      MONGODB_MP3_URI : mongodb://admin:password@mongodb:27017/mp3s?authSource=admin
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: password
+    command: ["bash", "./server.sh"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - test
+
+  auth-svc:
+    build: ./src/auth-svc
+    container_name: auth
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./src/auth-svc/.env
+    environment:
+      CONFIG: production
+      DATABASE_URL: postgresql://admin:password@postgres:5432
+    command: ["bash", "./server.sh"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongodb:
+       condition: service_healthy
+    networks:
+      - test
+
+  converter-svc:
+    build:
+      context: ./src/converter-svc
+      dockerfile: dev.Dockerfile
+    container_name: converter
+    restart: always
+    env_file:
+      - ./src/converter-svc/.env
+    environment:
+      MONGODB_URL: mongodb://admin:password@mongodb:27017?authSource=admin
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: password
+    command: ["python", "consumer.py"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - test
+
+  notification-svc:
+    build:
+      context: ./src/notification-svc
+      dockerfile: dev.Dockerfile
+    container_name: notification
+    restart: always
+    env_file:
+      - ./src/notification-svc/.env
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: password
+    command: ["python", "consumer.py"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - test
+
+networks:
+  test:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+    driver: local
+  postgres-data:
+    driver: local
